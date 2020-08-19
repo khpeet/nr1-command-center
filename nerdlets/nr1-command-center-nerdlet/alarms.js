@@ -661,6 +661,8 @@ export default class Alarms extends React.Component {
           console.debug(roleResp);
         }
       }
+    } else { // first time load or no accounts configured (for now)
+      userRole = 'admin'
     }
 
     return userRole;
