@@ -42,6 +42,8 @@ This project is distributed under the [Apache 2 license](LICENSE).
 }
 ```
 
+**NOTE: You must be an owner/admin role to view or edit the Configuration.**
+
 ## Getting started
 
 1. Ensure that you have [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [NPM](https://www.npmjs.com/get-npm) installed. If you're unsure whether you have one or both of them installed, run the following commands. (If you have them installed, these commands return a version number; if not, the commands won't be recognized.)

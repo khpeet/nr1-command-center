@@ -233,15 +233,23 @@ export default class Configurator extends React.Component {
 
         }
 
-         return <div>
-            <button style={btnStyle} className="btn btn-primary u-unstyledButton" onClick={()=>{this.setState({configVisible: !configVisible})}}>
-                <Icon spacingType={[Icon.SPACING_TYPE.SMALL]} type={Icon.TYPE.INTERFACE__OPERATIONS__CONFIGURE} inline ></Icon> {buttonTitle ? buttonTitle : ""}
-            </button>
-            <Modal hidden={!configVisible} onClose={()=>{this.setState({configVisible: false})}} >
-    <HeadingText>{modalTitle ? modalTitle : "Configuration Editor"}</HeadingText>
-    <BlockText>{modalHelp ? modalHelp : "Use the form below to configure the application."}</BlockText>
-               <div style={{"marginTop":"2em"}}>{returnVal}</div>
-             </Modal>
-        </div>
+         return (
+           <div>
+              {this.props.userRole == 'owner' || this.props.userRole == 'admin' ?
+              <button style={btnStyle} className="btn btn-primary u-unstyledButton" onClick={()=>{this.setState({configVisible: !configVisible})}}>
+                  <Icon spacingType={[Icon.SPACING_TYPE.SMALL]} type={Icon.TYPE.INTERFACE__OPERATIONS__CONFIGURE} inline ></Icon> {buttonTitle ? buttonTitle : ""}
+              </button>
+              :
+              <button disabled style={btnStyle} className="btn btn-primary u-unstyledButton" onClick={()=>{this.setState({configVisible: !configVisible})}}>
+                  <Icon spacingType={[Icon.SPACING_TYPE.SMALL]} type={Icon.TYPE.INTERFACE__OPERATIONS__CONFIGURE} inline ></Icon> {buttonTitle ? buttonTitle : ""}
+              </button>
+              }
+                <Modal hidden={!configVisible} onClose={()=>{this.setState({configVisible: false})}} >
+                <HeadingText>{modalTitle ? modalTitle : "Configuration Editor"}</HeadingText>
+                <BlockText>{modalHelp ? modalHelp : "Use the form below to configure the application."}</BlockText>
+                 <div style={{"marginTop":"2em"}}>{returnVal}</div>
+               </Modal>
+          </div>
+         )
     }
 }

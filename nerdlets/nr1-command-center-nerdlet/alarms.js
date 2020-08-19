@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import ReactTable from 'react-table';
 import Configurator from "./components/Configurator"
-import { AccountStorageMutation, AccountStorageQuery, Button, HeadingText, Spinner, Tabs, TabsItem, Card, CardHeader, Modal, TextField, Toast, Dropdown, DropdownItem, Tooltip, UserQuery, Icon} from 'nr1';
+import { AccountStorageMutation, AccountStorageQuery, Button, HeadingText, Spinner, Tabs, TabsItem, Card, CardHeader, Modal, TextField, Toast, Dropdown, DropdownItem, Tooltip, UserQuery, Icon, NerdGraphQuery} from 'nr1';
 import moment from 'moment';
 
 export default class Alarms extends React.Component {
@@ -32,7 +32,8 @@ export default class Alarms extends React.Component {
       config: false,
       currentTime: null,
       sortDisplay: "Sort by",
-      searchInput: ""
+      searchInput: "",
+      userRole: null
     }
 
     this.accountId = <your_account_id>; //insert your account ID (preferably a master account)
@@ -609,7 +610,7 @@ export default class Alarms extends React.Component {
 
   async getCurrentUser(){
     let data = await UserQuery.query();
-    return data.data.name;
+    return data.data;
   }
 
   setTempAcks(inc){
@@ -636,6 +637,35 @@ export default class Alarms extends React.Component {
     })
   }
 
+  async checkUserRole(){
+    const { config } = this.state;
+    let userRole = null;
+
+    if (config && config.accounts.length > 0) {
+      let currentUser = await this.getCurrentUser(); //get current user accessing nerdpack
+      for (let acct of config.accounts) { //iterate through configured accounts to get that user's role.
+        let roleResp = await fetch('https://api.newrelic.com/v2/users.json', {body: "filter[email]=" + currentUser.email,
+                             headers: {'X-Api-Key': acct.value}, method: 'post'});
+        if (roleResp.status == 200) {
+          let roleJson = await roleResp.json()
+          for (let user of roleJson.users) {
+            if (user.email == currentUser.email) {
+              userRole = user.role;
+              break;
+            }
+          }
+          if (userRole !== null) {
+            break;
+          }
+        } else {
+          console.debug(roleResp);
+        }
+      }
+    }
+
+    return userRole;
+  }
+
   async ackIncident(){
     let {ackInc} = this.state;
 
@@ -648,8 +678,8 @@ export default class Alarms extends React.Component {
       //loop to update corresponding cells
       for (var o=0; o < violationsToUpdate.length; o++){
         let vioToUpdate = violationsToUpdate[o]
-        this.saveAckToNerdstore(currUser, vioToUpdate);
-        this.updateAckCell(currUser, vioToUpdate);
+        this.saveAckToNerdstore(currUser.name, vioToUpdate);
+        this.updateAckCell(currUser.name, vioToUpdate);
       }
       this.setState({
         ackHidden: true,
@@ -784,6 +814,8 @@ export default class Alarms extends React.Component {
     let l = await this.loadLinksFromNerdStore();
     let a = await this.loadAcksFromNerdstore();
 
+    let curUsrRole = await this.checkUserRole();
+    this.setState({ userRole: curUsrRole });
     this.populateAllData(l, a).then(acctData => {
       this.setState({
         refreshingData: false,
@@ -922,6 +954,7 @@ export default class Alarms extends React.Component {
     const { accountSummaryData, tableData, cardData, config, refreshingData, linkText, displayText, adminKey, ackInc, currentTime, sortDisplay } = this.state;
 
     const sortItems = ['A-Z', 'Z-A', 'Critical', 'Warning', 'Healthy'];
+    console.log(this.state);
 
     let render = <Spinner />
 
@@ -997,13 +1030,14 @@ export default class Alarms extends React.Component {
           data={config}                                       // this should be wired to the config data from this.state
           dataChangeHandler={(data)=>{this.updateData(data)}}      // callback function run when config changes
 
-          accountId={this.accountId}                                 // master account
+          accountId={this.accountId}                                 // account to scope configuration to
           storageCollectionId="AccountConfig"             // the nerdstorage collection name to store config
           documentId="accountConfig"                                 // the nerstorage document id prefix
 
           buttonTitle="Configuration"                         // Some customization of the configurator UI
           modalTitle="Account Editor"
           modalHelp="Use the form below to configure accounts to report violations on."
+          userRole={this.state.userRole}
       />
       {config == false ? start : render}
       </>
